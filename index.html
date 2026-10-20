@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JGVRP Speedometer HUD</title>
+  <meta name="description" content="Custom digital speedometer HUD horizontal untuk JGVRP: fuel, RPM, speed MPH, oil pressure, engine health, dan indikator kendaraan." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <div class="hud-wrap">
+    <div class="cluster booting" id="hud">
+
+      <!-- Body cluster, FUEL, RPM, OIL, ENGINE digambar oleh script.js -->
+      <svg id="dial" class="dial" viewBox="0 0 1200 250" xmlns="http://www.w3.org/2000/svg"></svg>
+
+      <!-- ===== PANEL TENGAH: SPEED ===== -->
+      <div class="center">
+        <div id="speed-display" class="speed"><span class="dim">00</span><span class="bright">0</span></div>
+        <div class="unit-wrap">
+          <span class="unit">MPH</span>
+          <div class="shift" id="shift-light">SHIFT</div>
+        </div>
+      </div>
+
+      <!-- ===== BARIS BAWAH KIRI: gear, seatbelt, kunci ===== -->
+      <div class="bottom left">
+        <div class="gear-val" id="gear" title="Gear">N</div>
+        <i class="vdiv"></i>
+
+        <!-- Seatbelt: merah = belum dipasang, hijau = terpasang -->
+        <div id="seatbelts" class="icon-item warn" title="Seatbelt">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="4" r="2.2" fill="currentColor" stroke="none"/>
+            <path d="M8 22v-5.5L7 11.5C7 9.6 8.4 8 10.2 8h3.6C15.6 8 17 9.6 17 11.5l-1 5V22"/>
+            <path d="M9 8.5l7.5 10"/>
+          </svg>
+        </div>
+        <i class="vdiv"></i>
+
+        <!-- Kunci: gembok tertutup kuning = terkunci, terbuka redup = tidak terkunci -->
+        <div id="door-lock" class="icon-item" title="Vehicle Lock">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="5" y="11" width="14" height="10" rx="2" fill="currentColor" stroke="none"/>
+            <circle cx="12" cy="15.2" r="1.4" fill="#0a0b0d" stroke="none"/>
+            <path class="shackle-closed" d="M8 11V8a4 4 0 0 1 8 0v3"/>
+            <path class="shackle-open" d="M8 11V8a4 4 0 0 1 7.4-2.1"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- ===== BARIS BAWAH KANAN: lampu + odometer ===== -->
+      <div class="bottom right">
+        <!-- Lampu: mati = redup, low = hijau (garis miring), high = biru (garis lurus) -->
+        <div id="headlight" class="icon-item" title="Headlight">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 4h2a8 8 0 0 1 0 16h-2z" fill="currentColor" fill-opacity=".15"/>
+            <g class="beam-low"><path d="M9 5L2 7.5M9 9L2 11.5M9 13L2 15.5M9 17L2 19.5"/></g>
+            <g class="beam-high"><path d="M9 6H2M9 10H2M9 14H2M9 18H2"/></g>
+          </svg>
+        </div>
+        <i class="vdiv"></i>
+        <div class="odo">
+          <span class="c-lbl">ODO</span>
+          <div class="odo-line"><span id="odometer">0.0</span><small>mi</small></div>
+        </div>
+      </div>
+
+      <!-- ===== INTRO (tampil sekali saat HUD pertama dipakai) ===== -->
+      <div class="intro" id="intro">
+        <!-- Logo sendiri: taruh file "logo.png" di folder yang sama. Kalau ada, otomatis dipakai
+             dan tulisan bawaan disembunyikan. -->
+        <img class="intro-logo" src="logo.png" alt="" onload="document.getElementById('intro').classList.add('has-logo')" onerror="this.remove()">
+        <div class="intro-text" id="intro-text" data-text="OBEY">OBEY</div>
+        <i class="intro-line"></i>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
