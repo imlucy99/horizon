@@ -1,5 +1,6 @@
 :root {
-    --logo-size: 150px;         /* ukuran logo intro */
+    --logo-size: 150px;
+    --logo-filter: invert(1) contrast(1.6);   /* logo hitam -> putih. Kalau logo sudah putih/berwarna & transparan: ganti jadi none */         /* ukuran logo intro */
     --speed-size: 64px;         /* ukuran angka speed */
     --offset-bottom: 24px;      /* jarak HUD dari bawah layar (naikkan = HUD makin ke atas) */
     --offset-x: 0px;            /* geser HUD horizontal (+ = ke kanan, - = ke kiri) */
@@ -63,37 +64,25 @@ body.preview .hud-wrap {
 .dial .lbl.sm { font-size: 12px; letter-spacing: 1px; }
 .dial .val { font-family: var(--digital); font-weight: 800; font-size: 15px; fill: #fff; }
 .dial .rpm-txt { font-family: var(--ui); font-weight: 700; font-size: 17px; letter-spacing: 1px; fill: #f2f3f5; }
-.dial .num, .dial .onum {
+.dial .num, .dial .onum, .dial .fnum, .dial .enum {
     font-family: var(--ui); font-weight: 700; font-size: 14px; fill: #b9bdc5;
 }
-.dial .num.on, .dial .onum.on { fill: #ffffff; }
-.dial .num.rl, .dial .onum.rl { fill: var(--red); }
+.dial .num.on { fill: #ffffff; }
+.dial .num.rl, .dial .onum.rl, .dial .fnum.rl, .dial .enum.rl { fill: var(--red); }
 .dial .ico { color: #dfe1e6; }
 
-/* ----- tick RPM & OIL ----- */
-.dial .rt, .dial .ot { stroke: rgba(255, 255, 255, 0.24); }
-.dial .rt.on, .dial .ot.on { stroke: #ffffff; }
-.dial .rt.rl, .dial .ot.rl { stroke: rgba(255, 42, 47, 0.5); }
-.dial .rt.rl.on, .dial .ot.rl.on { stroke: var(--red); }
+/* ----- tick skala (RPM, OIL, FUEL, ENGINE) ----- */
+.dial .rt, .dial .ot, .dial .ft, .dial .et { stroke: rgba(255, 255, 255, 0.24); }
+.dial .rt.on, .dial .ot.on, .dial .ft.on, .dial .et.on { stroke: #ffffff; }
+.dial .rt.rl, .dial .ot.rl, .dial .ft.rl, .dial .et.rl { stroke: rgba(255, 42, 47, 0.5); }
+.dial .rt.rl.on, .dial .ot.rl.on, .dial .ft.rl.on, .dial .et.rl.on { stroke: var(--red); }
 
-/* ----- arc RPM ----- */
-.dial .rpm-base { fill: none; stroke: rgba(255, 255, 255, 0.14); stroke-width: 2; }
-.dial #rpm-fill { fill: none; stroke: #fff; stroke-width: 2.5; }
-.dial .rpm-red { fill: none; stroke: var(--red); stroke-width: 3.5; stroke-opacity: 0.55; }
-.dial #rpm-red-glow { fill: none; stroke: var(--red); stroke-width: 11; stroke-opacity: 0; }
-
-.cluster.redline .dial #rpm-red-glow { stroke-opacity: 0.3; }
-.cluster.redline .dial .rpm-red,
-.cluster.redline .dial #rpm-red-glow,
 .cluster.redline .dial .rt.rl.on { animation: blink 0.16s steps(2) infinite; }
 @keyframes blink { 50% { opacity: 0.25; } }
 
-/* ----- segmen FUEL & ENGINE ----- */
-.dial .seg { fill: rgba(255, 255, 255, 0.11); }
-.dial .seg.on { fill: #e9eaee; }
-.cluster.fuel-low .dial .seg.fuel.on { fill: var(--red); }
-.cluster.eng-warn .dial .seg.eng.on { fill: var(--yellow); }
-.cluster.eng-crit .dial .seg.eng.on { fill: var(--red); animation: slowblink 0.9s steps(2) infinite; }
+/* ----- peringatan ENGINE (tick) ----- */
+.cluster.eng-warn .dial .et.on, .cluster.eng-warn .dial .et.rl.on { stroke: var(--yellow); }
+.cluster.eng-crit .dial .et.on, .cluster.eng-crit .dial .et.rl.on { stroke: var(--red); animation: slowblink 0.9s steps(2) infinite; }
 @keyframes slowblink { 50% { opacity: 0.35; } }
 
 /* ----- nilai teks & warna peringatan ----- */
@@ -277,7 +266,7 @@ body.preview .hud-wrap {
     width: var(--logo-size);
     height: var(--logo-size);
     object-fit: contain;
-    filter: invert(1) contrast(1.6);   /* logo hitam -> putih */
+    filter: var(--logo-filter);   /* logo hitam -> putih */
     mix-blend-mode: screen;
     opacity: 0;
 }
@@ -287,8 +276,8 @@ body.preview .hud-wrap {
 .intro.has-logo .intro-line { display: none; }
 .cluster.intro-on .intro.has-logo .intro-logo { animation: logoIn 2.7s ease-out both; }
 @keyframes logoIn {
-    0%   { opacity: 0; transform: scale(0.82); filter: invert(1) contrast(1.6) blur(6px); }
-    30%  { opacity: 1; transform: scale(1);    filter: invert(1) contrast(1.6) blur(0); }
-    80%  { opacity: 1; transform: scale(1);    filter: invert(1) contrast(1.6) blur(0); }
-    100% { opacity: 0; transform: scale(1.04); filter: invert(1) contrast(1.6) blur(0); }
+    0%   { opacity: 0; transform: scale(0.82); filter: var(--logo-filter) blur(6px); }
+    30%  { opacity: 1; transform: scale(1);    filter: var(--logo-filter) blur(0); }
+    80%  { opacity: 1; transform: scale(1);    filter: var(--logo-filter) blur(0); }
+    100% { opacity: 0; transform: scale(1.04); filter: var(--logo-filter) blur(0); }
 }

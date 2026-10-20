@@ -13,7 +13,8 @@ const MPS_TO_MPH = 2.236936;
 const MAX_RPM = 8;          // skala tachometer (x1000)
 const REDLINE = 7;          // mulai zona merah (x1000)
 const OIL_MAX = 100;        // skala oil pressure (psi)
-const SEG_N = 8;            // jumlah segmen bar FUEL & ENGINE
+const FUEL_N = 20;          // jumlah interval tick skala FUEL
+const ENG_N = 20;           // jumlah interval tick skala ENGINE
 
 const NOOP_EL = document.createElement('div');   // pengaman kalau ada elemen yang dihapus dari HTML
 const $ = (id) => document.getElementById(id) || NOOP_EL;
@@ -48,6 +49,25 @@ function segs(cls, x0, y, n, w, gap, h) {
     let s = '';
     for (let i = 0; i < n; i++) {
         s += `<rect class="seg ${cls}" x="${(x0 + i * (w + gap)).toFixed(1)}" y="${y}" width="${w}" height="${h}" rx="1.5"/>`;
+    }
+    return s;
+}
+
+// Skala tick bergaya OIL: angka di atas, garis tick di tengah (dipakai RPM, FUEL, OIL, ENGINE)
+//   o = { cls, ncls, x0, x1, n, major, labels[], red(i), redNum(labelIdx) }
+function scale(o) {
+    const y = OIL_Y;
+    let s = `<line x1="${o.x0}" y1="${y + 3}" x2="${o.x1}" y2="${y + 3}" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>`;
+    for (let i = 0; i <= o.n; i++) {
+        const x = (o.x0 + ((o.x1 - o.x0) * i) / o.n).toFixed(2);
+        const maj = i % o.major === 0;
+        const mid = o.major % 2 === 0 && i % (o.major / 2) === 0;
+        const h = maj ? 14 : mid ? 10 : 7;
+        s += `<line class="${o.cls}${o.red(i) ? ' rl' : ''}" x1="${x}" y1="${y - h}" x2="${x}" y2="${y}" stroke-width="${maj ? 2.2 : 1.3}"/>`;
+        if (maj) {
+            const li = i / o.major;
+            s += `<text class="${o.ncls}${o.redNum(li) ? ' rl' : ''}" x="${x}" y="${y - 22}" text-anchor="middle">${o.labels[li]}</text>`;
+        }
     }
     return s;
 }
@@ -96,54 +116,35 @@ function buildDial() {
     <path d="M262 60 L278 150" stroke="rgba(255,255,255,0.16)" stroke-width="1.2"/>
     <path d="M938 60 L922 150" stroke="rgba(255,255,255,0.16)" stroke-width="1.2"/>
 
-    <!-- ================= FUEL ================= -->
-    <svg id="fuel-ico" class="ico" x="52" y="88" width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M19.77 7.23l.01-.01-3.72-3.72L15 4.56l2.11 2.11c-.94.36-1.61 1.26-1.61 2.33 0 1.38 1.12 2.5 2.5 2.5.36 0 .69-.08 1-.21v7.21c0 .55-.45 1-1 1s-1-.45-1-1V14c0-1.1-.9-2-2-2h-1V5c0-1.1-.9-2-2-2H6c-1.1 0-2 .9-2 2v16h10v-7.5h1.5v5c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5V9c0-.69-.28-1.32-.73-1.77zM12 10H6V5h6v5zm6 0c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z"/></svg>
-    ${segs('fuel', 92, 95, SEG_N, 15, 3.5, 18)}
-    <text class="lbl" x="92" y="140">E</text>
-    <text class="lbl" x="236" y="140" text-anchor="end">F</text>
-    <text id="fuel-val" class="val" x="164" y="141" text-anchor="middle">0%</text>
+    <!-- skala FUEL / RPM / OIL / ENGINE dibangun di bawah -->`;
 
-    <!-- ================= RPM ================= -->
-    <path class="rpm-base" d="${arcPath(69, RPM_START, RPM_START + RPM_SWEEP)}"/>
-    <path class="rpm-red" d="${arcPath(69, rpmAngle(REDLINE / MAX_RPM), rpmAngle(1))}"/>
-    <path id="rpm-red-glow" d="${arcPath(69, rpmAngle(REDLINE / MAX_RPM), rpmAngle(1))}"/>
-    <path id="rpm-fill" pathLength="100" stroke-dasharray="0 200" d="${arcPath(69, RPM_START, RPM_START + RPM_SWEEP)}"/>
-    <g>`;
-    for (let i = 0; i <= MAX_RPM * 5; i++) {
-        const a = rpmAngle(i / (MAX_RPM * 5));
-        const major = i % 5 === 0;
-        const [x1, y1] = pol(major ? 52 : 58, a), [x2, y2] = pol(64, a);
-        s += `<line class="rt${i >= REDLINE * 5 ? ' rl' : ''}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke-width="${major ? 2.4 : 1.3}"/>`;
-    }
-    s += '</g>';
-    for (let v = 0; v <= MAX_RPM; v++) {
-        const [x, y] = pol(40, rpmAngle(v / MAX_RPM));
-        s += `<text class="num${v >= REDLINE ? ' rl' : ''}" x="${x}" y="${y}" text-anchor="middle" dominant-baseline="central">${v}</text>`;
-    }
-    s += `
-    <text class="rpm-txt" x="${RX}" y="128" text-anchor="middle">RPM</text>
-    <text class="lbl sm" x="${RX}" y="150" text-anchor="middle">x1000</text>
+    const label = (name, valId, valInit, x0, x1, sub) =>
+        `<text class="lbl" x="${x0}" y="142">${name}</text>` +
+        (sub ? `<text class="lbl sm" x="${x1}" y="142" text-anchor="end">${sub}</text>`
+             : `<text id="${valId}" class="val" x="${x1}" y="143" text-anchor="end">${valInit}</text>`);
 
-    <!-- ================= OIL PRESSURE ================= -->
-    <svg id="oil-ico" class="ico" x="728" y="92" width="34" height="34" viewBox="0 0 24 24" fill="currentColor"><path d="M2.5 10h4.2l1.3-2h2V6.5H8V5h6v1.5h-2V8h2.5l2 1.8 5-2.8 1 1.2-6.6 7.3H8.4L7 13H2.5zM20.2 14.6c0-.9 1.1-2.3 1.1-2.3s1.1 1.4 1.1 2.3c0 .6-.5 1.1-1.1 1.1s-1.1-.5-1.1-1.1z"/></svg>
-    <line x1="${OIL_X0}" y1="${OIL_Y + 3}" x2="${OIL_X1}" y2="${OIL_Y + 3}" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>`;
-    for (let i = 0; i <= OIL_N; i++) {
-        const x = (OIL_X0 + ((OIL_X1 - OIL_X0) * i) / OIL_N).toFixed(2);
-        const major = i % 10 === 0, mid = i % 5 === 0;
-        const h = major ? 14 : mid ? 10 : 7;
-        s += `<line class="ot${i >= 40 ? ' rl' : ''}" x1="${x}" y1="${OIL_Y - h}" x2="${x}" y2="${OIL_Y}" stroke-width="${major ? 2.2 : 1.3}"/>`;
-        if (major) s += `<text class="onum${i >= 40 ? ' rl' : ''}" data-v="${i / 10}" x="${x}" y="${OIL_Y - 22}" text-anchor="middle">${(i / 50) * OIL_MAX}</text>`;
-    }
-    s += `
-    <text class="lbl" x="${OIL_X0}" y="142">OIL</text>
-    <text id="oil-val" class="val" x="${OIL_X1}" y="143" text-anchor="end">0 psi</text>
+    // FUEL
+    s += '<svg id="fuel-ico" class="ico" x="52" y="88" width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M19.77 7.23l.01-.01-3.72-3.72L15 4.56l2.11 2.11c-.94.36-1.61 1.26-1.61 2.33 0 1.38 1.12 2.5 2.5 2.5.36 0 .69-.08 1-.21v7.21c0 .55-.45 1-1 1s-1-.45-1-1V14c0-1.1-.9-2-2-2h-1V5c0-1.1-.9-2-2-2H6c-1.1 0-2 .9-2 2v16h10v-7.5h1.5v5c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5V9c0-.69-.28-1.32-.73-1.77zM12 10H6V5h6v5zm6 0c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z"/></svg>';
+    s += scale({ cls: 'ft', ncls: 'fnum', x0: 96, x1: 240, n: FUEL_N, major: 10, labels: ['E', '1/2', 'F'],
+                 red: (i) => i < 4, redNum: (k) => k === 0 });
+    s += label('FUEL', 'fuel-val', '0%', 96, 240);
 
-    <!-- ================= ENGINE HEALTH ================= -->
-    <svg id="eng-ico" class="ico" x="946" y="88" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9v6M3 12h2.2M5.2 8.5h3.1V6.3h5v2.2h2.1l1.5 2h3.1v6.2h-2.2l-1.4 1.8H8.8l-3.6-3.6z"/></svg>
-    ${segs('eng', 988, 95, SEG_N, 15, 3.5, 18)}
-    <text class="lbl" x="988" y="140">ENGINE</text>
-    <text id="eng-val" class="val" x="1132" y="141" text-anchor="end">100%</text>
-    `;
+    // RPM (tanpa ikon, dipusatkan di antara pembatas)
+    s += scale({ cls: 'rt', ncls: 'num', x0: 304, x1: 450, n: MAX_RPM * 5, major: 5, labels: [0, 1, 2, 3, 4, 5, 6, 7, 8],
+                 red: (i) => i >= REDLINE * 5, redNum: (k) => k >= REDLINE });
+    s += label('RPM', '', '', 304, 450, 'x1000');
+
+    // OIL
+    s += '<svg id="oil-ico" class="ico" x="728" y="92" width="34" height="34" viewBox="0 0 24 24" fill="currentColor"><path d="M2.5 10h4.2l1.3-2h2V6.5H8V5h6v1.5h-2V8h2.5l2 1.8 5-2.8 1 1.2-6.6 7.3H8.4L7 13H2.5zM20.2 14.6c0-.9 1.1-2.3 1.1-2.3s1.1 1.4 1.1 2.3c0 .6-.5 1.1-1.1 1.1s-1.1-.5-1.1-1.1z"/></svg>';
+    s += scale({ cls: 'ot', ncls: 'onum', x0: OIL_X0, x1: OIL_X1, n: OIL_N, major: 10, labels: [0, 20, 40, 60, 80, 100],
+                 red: (i) => i >= 40, redNum: (k) => k >= 4 });
+    s += label('OIL', 'oil-val', '0 psi', OIL_X0, OIL_X1);
+
+    // ENGINE
+    s += '<svg id="eng-ico" class="ico" x="946" y="88" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9v6M3 12h2.2M5.2 8.5h3.1V6.3h5v2.2h2.1l1.5 2h3.1v6.2h-2.2l-1.4 1.8H8.8l-3.6-3.6z"/></svg>';
+    s += scale({ cls: 'et', ncls: 'enum', x0: 988, x1: 1132, n: ENG_N, major: 5, labels: [0, 25, 50, 75, 100],
+                 red: (i) => i < 6, redNum: (k) => k === 0 });
+    s += label('ENGINE', 'eng-val', '100%', 988, 1132);
     svg.innerHTML = s;
 }
 buildDial();
@@ -164,12 +165,11 @@ buildDial();
     el.style.fontSize = Math.max(14, Math.min(34, Math.floor(180 / (chars.length * 0.95)))) + 'px';
 })();
 
-const rpmFill = $('rpm-fill');
 const rTicks = svg.querySelectorAll('.rt');
 const rNums = svg.querySelectorAll('.num');
 const oTicks = svg.querySelectorAll('.ot');
-const fuelSegs = svg.querySelectorAll('.seg.fuel');
-const engSegs = svg.querySelectorAll('.seg.eng');
+const fTicks = svg.querySelectorAll('.ft');
+const eTicks = svg.querySelectorAll('.et');
 
 // ---------- State ----------
 const state = {
@@ -191,12 +191,8 @@ const state = {
 };
 let bootUntil = performance.now() + 1700;
 
-let lastRatio = NaN, lastRedline = null;
+let lastRedline = null;
 function renderRpm(ratio) {
-    if (ratio !== lastRatio) {
-        lastRatio = ratio;
-        rpmFill.setAttribute('stroke-dasharray', `${(ratio * 100).toFixed(2)} 200`);
-    }
     const lit = Math.round(ratio * MAX_RPM * 5);
     if (lit !== state.lastTick) {
         state.lastTick = lit;
@@ -220,15 +216,15 @@ function renderOil(psi) {
 }
 
 function renderBars(f, e) {
-    const fl = f > 0.005 ? Math.ceil(f * SEG_N - 1e-6) : 0;
-    const el = e > 0.005 ? Math.ceil(e * SEG_N - 1e-6) : 0;
+    const fl = f > 0.005 ? Math.round(f * FUEL_N) : -1;
+    const el = e > 0.005 ? Math.round(e * ENG_N) : -1;
     if (fl !== state.lastFuelLit) {
         state.lastFuelLit = fl;
-        fuelSegs.forEach((s, i) => s.classList.toggle('on', i < fl));
+        fTicks.forEach((t, i) => t.classList.toggle('on', i <= fl));
     }
     if (el !== state.lastEngLit) {
         state.lastEngLit = el;
-        engSegs.forEach((s, i) => s.classList.toggle('on', i < el));
+        eTicks.forEach((t, i) => t.classList.toggle('on', i <= el));
     }
 }
 function refreshBars() {
