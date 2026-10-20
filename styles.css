@@ -2,9 +2,9 @@
     --logo-size: 150px;
     --logo-filter: invert(1) contrast(1.6);   /* logo hitam -> putih. Kalau logo sudah putih/berwarna & transparan: ganti jadi none */         /* ukuran logo intro */
     --speed-size: 64px;         /* ukuran angka speed */
-    --offset-bottom: 24px;      /* jarak HUD dari bawah layar (naikkan = HUD makin ke atas) */
+    --offset-bottom: 20px;      /* jarak HUD dari bawah layar (naikkan = HUD makin ke atas) */
     --offset-x: 0px;            /* geser HUD horizontal (+ = ke kanan, - = ke kiri) */
-    --scale: 0.7;               /* ubah untuk memperbesar / memperkecil HUD */
+    --scale: 0.5;               /* ubah untuk memperbesar / memperkecil HUD */
     --red: #ff2a2f;
     --green: #22d65a;
     --blue: #2f8bff;
